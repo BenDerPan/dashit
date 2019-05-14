@@ -1,6 +1,10 @@
 import React, { Component } from 'react';
-import { ForceGraph2D, ForceGraph3D, ForceGraphVR } from 'react-force-graph';
+import * as THREE from 'three';
+import Orbitcontrols from 'three-orbitcontrols';
 import SpriteText from 'three-spritetext';
+import { ForceGraph2D, ForceGraph3D, ForceGraphVR } from 'react-force-graph';
+
+
 class GraphItem extends Component {
     constructor(props) {
         super(props);
@@ -342,12 +346,12 @@ class GraphItem extends Component {
                     { "source": "Mme.Hucheloup", "target": "Enjolras", "value": 1 }
                 ]
             }
-        }
+        };
     }
 
     render() {
         return (
-            <ForceGraph3D
+            <ForceGraph3D width={this.props.parentWidth}  height={this.props.parentHeight}
                 graphData={this.state.datas}
                 nodeAutoColorBy="group"
                 linkColor="#F8B209"
@@ -360,6 +364,16 @@ class GraphItem extends Component {
             />
         );
     }
+    // componentDidMount(){
+    //     console.log(this.props.parentContainer); // 访问挂载在组件上ref
+
+    //     console.log(this.props.parentContainer.clientWidth,this.props.parentContainer.clientHeight);
+    //     this.setState({
+    //         clientWidth:this.props.parentContainer.clientWidth,
+    //         clientHeight:this.props.parentContainer.clientHeight
+    //     })
+    // }
+
 }
 
 export default GraphItem;

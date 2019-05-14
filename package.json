@@ -3,11 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@arwes/arwes": "^1.0.0-alpha.9",
+    "@arwes/arwes": "^1.0.0-alpha.10",
+    "antd": "^3.18.1",
+    "g2": "^2.3.13",
+    "g2-react": "^1.3.2",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-force-graph": "^1.20.6",
+    "react-force-graph": "^1.21.1",
+    "react-grid-layout": "^0.16.6",
     "react-scripts": "3.0.0",
+    "three": "^0.104.0",
+    "three-orbitcontrols": "^2.102.1",
     "three-spritetext": "^1.0.6"
   },
   "scripts": {
