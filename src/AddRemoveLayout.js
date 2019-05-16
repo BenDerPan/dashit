@@ -24,19 +24,38 @@ class AddRemoveLayout extends React.PureComponent {
     super(props);
 
     this.state = {
-      items: [0, 1, 2, 3, 4].map(function (i, key, list) {
-        return {
-          i: i.toString(),
-          x: i * 2,
+      items: [
+        {
+          index: 0,
+          i: "GraphView1",
+          x: 0,
           y: 0,
           w: 3,
           h: 3,
           frameHeight: { height: 3 * AddRemoveLayout.defaultProps.rowHeight + 20 },
-        };
-      }),
-      newCounter: 0
+        },
+        {
+          index: 1,
+          i: "GraphView2",
+          x: 2,
+          y: 0,
+          w: 3,
+          h: 3,
+          frameHeight: { height: 3 * AddRemoveLayout.defaultProps.rowHeight + 20 },
+        },
+        {
+          index: 2,
+          i: "GraphView3",
+          x: 4,
+          y: 0,
+          w: 3,
+          h: 3,
+          frameHeight: { height: 3 * AddRemoveLayout.defaultProps.rowHeight + 20 },
+        },
+      ],
+      newCounter: 4
     };
-
+    console.log("初始化:",this.state.items);
     this.onAddItem = this.onAddItem.bind(this);
     this.onBreakpointChange = this.onBreakpointChange.bind(this);
   }
@@ -48,11 +67,10 @@ class AddRemoveLayout extends React.PureComponent {
       top: 0,
       cursor: "pointer",
     };
-    console.log(el);
     return (
       <div key={el.i} data-grid={el}>
         <Frame style={el.frameHeight}>
-          <Words>Graph Monitor</Words>
+          <Words>{el.i}</Words>
           <span style={removeStyle} onClick={this.onRemoveItem.bind(this, el.i)}>Close</span>
           <Line></Line>
         </Frame>
@@ -63,17 +81,24 @@ class AddRemoveLayout extends React.PureComponent {
 
   onAddItem() {
     /*eslint no-console: 0*/
-    console.log("adding", "n" + this.state.newCounter);
-    this.setState({
-      // Add a new item. It must have a unique key!
-      items: this.state.items.concat({
-        i: "n" + this.state.newCounter,
+    console.log("adding", this.state.newCounter);
+    let keyName="GraphView"+this.state.newCounter.toString();
+    const items = [...this.state.items,
+      {
+        index:this.state.newCounter,
+        i: keyName,
         x: (this.state.items.length * 2) % (this.state.cols || 12),
         y: Infinity, // puts it at the bottom
         w: 3,
         h: 3,
         frameHeight: { height: 3 * AddRemoveLayout.defaultProps.rowHeight + 20 },
-      }),
+      }
+    ];
+    
+    console.log("新增后：",items,items.length);
+    this.setState({
+      // Add a new item. It must have a unique key!
+      items:items,
       // Increment the counter to ensure key is always unique.
       newCounter: this.state.newCounter + 1
     });
@@ -94,14 +119,21 @@ class AddRemoveLayout extends React.PureComponent {
 
   onRemoveItem(i) {
     console.log("removing", i);
-    this.setState({ items: _.reject(this.state.items, { i: i }) });
+    const items=[...this.state.items.filter((s)=>{return s.i!=i})];
+    console.log("删除后：",items);
+
+    this.setState({ items:items});
   }
 
   onResize(layout, oldLayoutItem, layoutItem, placeholder) {
     // `oldLayoutItem` contains the state of the item before the resize.
     // You can modify `layoutItem` to enforce constraints.
-    const items = [...this.state.items];
-    items[layoutItem.i].frameHeight = { height: layoutItem.h * this.props.rowHeight + (layoutItem.h - 1) * 10 }
+    // const items = [...this.state.items];
+    const items=[...this.state.items];
+    let index=items.findIndex((s)=>{return s.i===layoutItem.i});
+    if(index>-1){
+      items[index].frameHeight = { height: layoutItem.h * this.props.rowHeight + (layoutItem.h - 1) * 10 }
+    }
     this.setState({
       items: items
     })
@@ -111,7 +143,7 @@ class AddRemoveLayout extends React.PureComponent {
   render() {
     return (
       <div>
-        <div style={{margin:5}}>
+        <div style={{ margin: 5 }}>
           <Button onClick={this.onAddItem}>
             <Icon path={mdiAccount}
               size={0.5}
