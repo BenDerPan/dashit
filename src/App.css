@@ -1,1 +1,9 @@
+.Table-Row-Color{
+  color: aqua;
+}
 
+.ant-table-small > .ant-table-content > .ant-table-body > table > .ant-table-thead > tr > th{
+  border: none;
+  color: cadetblue;
+  
+}
