@@ -4,6 +4,12 @@
 
 .ant-table-small > .ant-table-content > .ant-table-body > table > .ant-table-thead > tr > th{
   border: none;
-  color: cadetblue;
+  color: mediumturquoise;
+  font-weight: bold;
   
+}
+
+.center-div{
+  margin:0 auto; width:600px;height:350px;
+
 }

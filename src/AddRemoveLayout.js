@@ -1,6 +1,8 @@
 import React from "react";
-import { ThemeProvider, createTheme, Arwes, Heading, Button, Line, Row, Col, Project, Frame, Words } from '@arwes/arwes';
+import { Heading, Button, Line, Frame, Words } from '@arwes/arwes';
 import { WidthProvider, Responsive } from "react-grid-layout";
+
+import {Utils} from './utils/Utils'
 
 import TableItem from './components/TableItem'
 import LineItem from './components/LineItem'
@@ -17,6 +19,8 @@ import '@mdi/font/css/materialdesignicons.css'
 
 import _ from "lodash";
 
+import * as Mock from './mock/ExampleData'
+
 import 'antd/dist/antd.css';
 
 import 'react-grid-layout/css/styles.css'
@@ -25,8 +29,8 @@ import 'react-resizable/css/styles.css'
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 // saveItemsToLS("items",[]);
 // saveLayoutsToLS("layouts",{})
-const originalLayouts = getLayoutsFromLS("layouts") || {};
-const originalItems = getItemsFromLS("items") || [];
+const originalLayouts = Utils.getLayoutsFromLS("layouts") || {};
+const originalItems =  Utils.getItemsFromLS("items") || [];
 const ClientUnitWidth = Math.ceil(document.getElementById('root').clientWidth / 12) - 10;
 
 class AddRemoveLayout extends React.PureComponent {
@@ -34,6 +38,8 @@ class AddRemoveLayout extends React.PureComponent {
     className: "layout",
     cols: { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 },
     rowHeight: 100,
+    widthNum:3,
+    heightNum:3,
   };
 
   constructor(props) {
@@ -50,39 +56,38 @@ class AddRemoveLayout extends React.PureComponent {
     this.state = {
       layouts: JSON.parse(JSON.stringify(originalLayouts)),
       items: JSON.parse(JSON.stringify(originalItems)),
-
-      newCounter: 0
+      wsState:{text:"Connecting...",color:"yellow"},
+      widthNum:AddRemoveLayout.defaultProps.widthNum,
+      heightNum:AddRemoveLayout.defaultProps.heightNum,
+      msgKey:this.props.match.params.index,
     };
     console.log("初始化:", this.state.items);
-    // this.onAddItem = this.onAddItem.bind(this);
-    // this.onResetAll=this.onResetAll.bind(this);
-    // this.onBreakpointChange = this.onBreakpointChange.bind(this);
     console.log(this.state.layouts, this.state.items);
   }
 
-  createChildVew(componentType, parentWidth, parentHeight) {
+  createChildVew(componentType, parentWidth, parentHeight, data) {
     console.log("创建组件类型：", componentType);
     switch (componentType) {
       case "table":
-        return <TableItem parentWidth={parentWidth} parentHeight={parentHeight}></TableItem>;
+        return <TableItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></TableItem>;
       case "pie":
-        return <PieItem parentWidth={parentWidth} parentHeight={parentHeight}></PieItem>;
+        return <PieItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></PieItem>;
       case "line":
-        return <LineItem parentWidth={parentWidth} parentHeight={parentHeight}></LineItem>;
+        return <LineItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></LineItem>;
       case "bar":
-        return <BarItem parentWidth={parentWidth} parentHeight={parentHeight}></BarItem>;
+        return <BarItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></BarItem>;
       case "list":
-        return <ListItem parentWidth={parentWidth} parentHeight={parentHeight}></ListItem>;
+        return <ListItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></ListItem>;
       case "text":
-        return <TextItem parentWidth={parentWidth} parentHeight={parentHeight}></TextItem>;
+        return <TextItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></TextItem>;
       case "graph":
-        return <GraphItem parentWidth={parentWidth} parentHeight={parentHeight}></GraphItem>;
+        return <GraphItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></GraphItem>;
       case "image":
-        return <ImageItem parentWidth={parentWidth} parentHeight={parentHeight}></ImageItem>;
+        return <ImageItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></ImageItem>;
       case "settings":
-        return <SettingsItem parentWidth={parentWidth} parentHeight={parentHeight}></SettingsItem>;
+        return <SettingsItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></SettingsItem>;
       case "network_status":
-        return <NetworkStatusItem parentWidth={parentWidth} parentHeight={parentHeight}></NetworkStatusItem>;
+        return <NetworkStatusItem parentWidth={parentWidth} parentHeight={parentHeight} viewData={data}></NetworkStatusItem>;
       default:
         return <Words>Not Implemented!!!</Words>;
     }
@@ -99,8 +104,9 @@ class AddRemoveLayout extends React.PureComponent {
     const componentType = el.type;
     let parentWidth = el.frameWidth;
     let parentHeight = el.frameHeight.height - 52;
+    let viewData = el.viewData;
 
-    const ChildView = () => this.createChildVew(componentType, parentWidth, parentHeight);
+    const ChildView = () => this.createChildVew(componentType, parentWidth, parentHeight, viewData);
 
     return (
       <div key={el.i} data-grid={el}>
@@ -120,23 +126,23 @@ class AddRemoveLayout extends React.PureComponent {
 
   onAddItem(componentType) {
     /*eslint no-console: 0*/
-    console.log("adding", this.state.newCounter, componentType);
-
+    console.log("adding", componentType);
+    const totalCount = this.state.items.length;
     let keyName = new Date().getTime().toString();
     const items = [...this.state.items,
     {
-      index: this.state.newCounter,
+      index: totalCount,
       i: keyName,
-      x: (this.state.items.length * 2) % (this.state.cols || 12),
-      y: this.state.newCounter / 4, // puts it at the bottom
-      w: 3,
-      h: 3,
+      x: (totalCount * this.state.widthNum) % 12,
+      y: Math.floor((totalCount * this.state.heightNum) / 12), // puts it at the bottom
+      w: this.state.widthNum,
+      h: this.state.heightNum,
       type: componentType,
-      title: "Monitor" + this.state.newCounter.toString(),
-      frameHeight: { height: 3 * AddRemoveLayout.defaultProps.rowHeight + (3 - 1) * 10 },
-      frameWidth: ClientUnitWidth * 3,
-    }
-    ];
+      title: "Waiting Data...",
+      frameHeight: { height: this.state.heightNum * AddRemoveLayout.defaultProps.rowHeight + (this.state.heightNum - 1) * 10 },
+      frameWidth: ClientUnitWidth * this.state.widthNum,
+      viewData: Mock.GetMockData(componentType)
+    }];
     //重新排序Index
     for (let n = 0; n < items.length; n++) {
       items[n].index = n;
@@ -147,11 +153,9 @@ class AddRemoveLayout extends React.PureComponent {
     this.setState({
       // Add a new item. It must have a unique key!
       items: items,
-      // Increment the counter to ensure key is always unique.
-      newCounter: this.state.newCounter + 1
     });
-    console.log("Save items", items);
-    saveItemsToLS("items", items);
+    
+    Utils.saveItemsToLS("items", items);
   }
 
   // We're using the cols coming back from this to calculate where to add new items.
@@ -163,18 +167,18 @@ class AddRemoveLayout extends React.PureComponent {
   }
 
   onLayoutChange(layout, layouts) {
-    saveLayoutsToLS("layouts", layouts);
     this.setState({ layouts: layouts });
-    saveItemsToLS("items", this.state.items);
+    Utils.saveLayoutsToLS("layouts", layouts);
+    Utils.saveItemsToLS("items", this.state.items);
   }
 
   onRemoveItem(i) {
     console.log("removing", i);
-    const items = [...this.state.items.filter((s) => { return s.i != i })];
+    const items = [...this.state.items.filter((s) => { return s.i !== i })];
     console.log("删除后：", items);
 
     this.setState({ items: items });
-    saveItemsToLS("items", items);
+    Utils.saveItemsToLS("items", items);
   }
 
   onResize(layout, oldLayoutItem, layoutItem, placeholder) {
@@ -184,7 +188,7 @@ class AddRemoveLayout extends React.PureComponent {
     let index = items.findIndex((s) => { return s.i === layoutItem.i });
     if (index > -1) {
       items[index].frameHeight = { height: layoutItem.h * this.props.rowHeight + (layoutItem.h - 1) * 10 };
-      items[index].frameWidth = w;//ClientUnitWidth*layoutItem.w;
+      items[index].frameWidth = w;
     }
     this.setState({
       items: items
@@ -195,6 +199,7 @@ class AddRemoveLayout extends React.PureComponent {
   render() {
     return (
       <div>
+        <Heading node='h5'>AI Bot Dashboard V1.0 {" "}<Words style={{color:this.state.wsState.color}}>{" ["+this.state.wsState.text+"] "}</Words></Heading>
         <div style={{ margin: 5 }}>
           <Button onClick={this.onResetAll} animate layer='alert'>
             <i className='mdi mdi-lock-reset'></i>
@@ -259,59 +264,9 @@ class AddRemoveLayout extends React.PureComponent {
       items: [],
       layouts: {},
     });
-    saveItemsToLS("items", this.state.items);
-    saveLayoutsToLS("layouts", this.state.layouts);
+    Utils.saveItemsToLS("items", this.state.items);
+    Utils.saveLayoutsToLS("layouts", this.state.layouts);
   };
-}
-
-
-
-function getLayoutsFromLS(key) {
-  let ls = {};
-  if (global.localStorage) {
-    try {
-      ls = JSON.parse(global.localStorage.getItem("DASHIT-LAYOUTS")) || {};
-    } catch (e) {
-      /*Ignore*/
-    }
-  }
-  return ls[key];
-}
-
-function saveLayoutsToLS(key, value) {
-  if (global.localStorage) {
-    global.localStorage.setItem(
-      "DASHIT-LAYOUTS",
-      JSON.stringify({
-        [key]: value
-      })
-    );
-  }
-}
-function getItemsFromLS(key) {
-  let ls = [];
-  if (global.localStorage) {
-    try {
-      ls = JSON.parse(global.localStorage.getItem("DASHIT-ITEMS")) || [];
-    } catch (e) {
-      /*Ignore*/
-    }
-  }
-  return ls[key];
-}
-
-function saveItemsToLS(key, value) {
-  console.log("Save Items", JSON.stringify({
-    [key]: value
-  }));
-  if (global.localStorage) {
-    global.localStorage.setItem(
-      "DASHIT-ITEMS",
-      JSON.stringify({
-        [key]: value
-      })
-    );
-  }
 }
 
 

@@ -1,21 +1,30 @@
 import React from 'react';
-import { ThemeProvider, createTheme, Arwes, Heading, Button, Line, Row, Col, Project, Frame } from '@arwes/arwes';
+import { BrowserRouter, Route, Switch, Redirect } from 'react-router-dom';
+import { ThemeProvider, createTheme, Arwes, Heading } from '@arwes/arwes';
+import HelpPage from './HelpPage'
+import NotFoundPage from './NotFoundPage'
 import AddRemoveLayout from './AddRemoveLayout'
 import './App.css';
 
 
 function App() {
   return (
+
     <ThemeProvider theme={createTheme()}>
       <Arwes>
-        <div style={{ margin: 20 }}>
-          <Heading node='h5'>AI Bot Dashboard V1.0</Heading>
-          <div>
-            <AddRemoveLayout ></AddRemoveLayout>
+        <BrowserRouter>
+          <div style={{ margin: 15 }}>
+            <Switch>
+              <Route path="/" exact component={HelpPage}></Route>
+              <Route path="/:index" exact component={AddRemoveLayout}></Route>
+              
+              <Route component={NotFoundPage} />
+            </Switch>
           </div>
-        </div>
+        </BrowserRouter>
       </Arwes>
     </ThemeProvider>
+
   );
 }
 export default App;
