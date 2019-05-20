@@ -2,7 +2,9 @@ import React from "react";
 import { Heading, Button, Line, Frame, Words } from '@arwes/arwes';
 import { WidthProvider, Responsive } from "react-grid-layout";
 
-import {Utils} from './utils/Utils'
+import { Utils } from './utils/Utils'
+
+import Centrifuge from 'centrifuge'
 
 import TableItem from './components/TableItem'
 import LineItem from './components/LineItem'
@@ -15,6 +17,9 @@ import NetworkStatusItem from './components/NetworkStatusItem'
 import BarItem from './components/BarItem'
 
 import GraphItem from './components/GraphItem'
+
+import ShowLayoutDialog from './components/ShowLayoutDialog'
+
 import '@mdi/font/css/materialdesignicons.css'
 
 import _ from "lodash";
@@ -27,23 +32,26 @@ import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
-// saveItemsToLS("items",[]);
-// saveLayoutsToLS("layouts",{})
+// Utils.saveItemsToLS("items",[]);
+// Utils.saveLayoutsToLS("layouts",{})
 const originalLayouts = Utils.getLayoutsFromLS("layouts") || {};
-const originalItems =  Utils.getItemsFromLS("items") || [];
+const originalItems = Utils.getItemsFromLS("items") || [];
 const ClientUnitWidth = Math.ceil(document.getElementById('root').clientWidth / 12) - 10;
+const WSAddress = document.getElementById("wsAddress").href;
+const WSToken = document.getElementById('wsAddress').innerText;
 
 class AddRemoveLayout extends React.PureComponent {
   static defaultProps = {
     className: "layout",
     cols: { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 },
     rowHeight: 100,
-    widthNum:3,
-    heightNum:3,
+    widthNum: 3,
+    heightNum: 3,
   };
 
   constructor(props) {
     super(props);
+    const msgKey = this.props.match.params.index;
     this.createChildVew = this.createChildVew.bind(this);
     this.createElement = this.createElement.bind(this);
     this.onAddItem = this.onAddItem.bind(this);
@@ -52,17 +60,103 @@ class AddRemoveLayout extends React.PureComponent {
     this.onRemoveItem = this.onRemoveItem.bind(this);
     this.onResize = this.onResize.bind(this);
     this.onResetAll = this.onResetAll.bind(this);
+    this.onShowLayout=this.onShowLayout.bind(this);
+    this.onGetLayoutJson=this.onGetLayoutJson.bind(this);
 
+    this.onWsConnected=this.onWsConnected.bind(this);
+    this.onWsDisconnected = this.onWsDisconnected.bind(this);
+    this.onWsHandleMsg=this.onWsHandleMsg.bind(this);
+    
     this.state = {
       layouts: JSON.parse(JSON.stringify(originalLayouts)),
       items: JSON.parse(JSON.stringify(originalItems)),
-      wsState:{text:"Connecting...",color:"yellow"},
-      widthNum:AddRemoveLayout.defaultProps.widthNum,
-      heightNum:AddRemoveLayout.defaultProps.heightNum,
-      msgKey:this.props.match.params.index,
+      wsState: { text: "Connecting", color: "yellow" },
+      widthNum: AddRemoveLayout.defaultProps.widthNum,
+      heightNum: AddRemoveLayout.defaultProps.heightNum,
+      msgKey: msgKey,
+      showLayoutDialog:false,
     };
-    console.log("初始化:", this.state.items);
-    console.log(this.state.layouts, this.state.items);
+    console.log("Init Dashboard:", this.state.items,this.state.layouts);
+
+    this.WsConnection = new Centrifuge(
+      WSAddress,
+      {
+        onTransportClose: this.onWsDisconnected
+      });
+    
+    this.WsConnection.on("connect",this.onWsConnected);
+    
+    this.WsConnection.setToken(WSToken);
+    console.log(msgKey, WSAddress, WSToken);
+    this.WsConnection.subscribe(msgKey, this.onWsHandleMsg);
+
+
+
+  }
+  onWsConnected(){
+    console.log("Websocket Connected...OK");
+    this.setState(()=>{
+      return{
+        wsState: { text: "Connected", color: "green" },
+      }
+    })
+  }
+  
+  onWsDisconnected(ctx) {
+    console.log("Websocket Disconnected...Error", ctx);
+    this.setState(()=>{
+      return{
+        wsState: { text: "Connecting", color: "yellow" },
+      }
+    })
+  }
+
+  onWsHandleMsg(message){
+    console.log("Receive:",message.data);
+    const msg=message.data;
+    switch(msg.msgType){
+      case "SetMonitorLayout":
+        this.setState(()=>{
+          return{
+            layouts:msg.data.layouts,
+            items:msg.data.items,
+          }
+        });
+        break;
+      case "UpdateViewData":
+        const items=[...this.state.items];
+        let updated=false;
+        for(let i=0;i<msg.data.length; i++){
+          for(let j=0;j<items.length;j++){
+            if(msg.data[i].index===items[j].index){
+              if(msg.data[i].type===items[j].type){
+                items[j].title=msg.data[i].title||items[j].title;
+                items[j].viewData=msg.data[i].data;
+                updated=true;
+              }else{
+                 console.log("Invalid View Data:",msg.data[i])
+              }
+              break;
+            }
+          }
+        }
+        if (updated){
+          this.setState(()=>{
+            return {
+              items:items
+            }
+          })
+        };
+        break;
+      default:
+        console.log("Received Unknow Type Message:",msg);
+        break;
+    }
+  }
+
+  componentDidMount() {
+    this.WsConnection.connect();
+
   }
 
   createChildVew(componentType, parentWidth, parentHeight, data) {
@@ -125,8 +219,6 @@ class AddRemoveLayout extends React.PureComponent {
   }
 
   onAddItem(componentType) {
-    /*eslint no-console: 0*/
-    console.log("adding", componentType);
     const totalCount = this.state.items.length;
     let keyName = new Date().getTime().toString();
     const items = [...this.state.items,
@@ -138,7 +230,7 @@ class AddRemoveLayout extends React.PureComponent {
       w: this.state.widthNum,
       h: this.state.heightNum,
       type: componentType,
-      title: "Waiting Data...",
+      title: null,
       frameHeight: { height: this.state.heightNum * AddRemoveLayout.defaultProps.rowHeight + (this.state.heightNum - 1) * 10 },
       frameWidth: ClientUnitWidth * this.state.widthNum,
       viewData: Mock.GetMockData(componentType)
@@ -146,15 +238,15 @@ class AddRemoveLayout extends React.PureComponent {
     //重新排序Index
     for (let n = 0; n < items.length; n++) {
       items[n].index = n;
-      items[n].title = "Monitor" + n.toString();
+      items[n].title = items[n].title||"Monitor" + n.toString();
       items[n].i = "M" + n.toString();
     }
-    console.log("新增后：", items, items.length);
+
     this.setState({
       // Add a new item. It must have a unique key!
       items: items,
     });
-    
+
     Utils.saveItemsToLS("items", items);
   }
 
@@ -175,7 +267,6 @@ class AddRemoveLayout extends React.PureComponent {
   onRemoveItem(i) {
     console.log("removing", i);
     const items = [...this.state.items.filter((s) => { return s.i !== i })];
-    console.log("删除后：", items);
 
     this.setState({ items: items });
     Utils.saveItemsToLS("items", items);
@@ -194,13 +285,39 @@ class AddRemoveLayout extends React.PureComponent {
       items: items
     })
 
+  };
+
+  onResetAll() {
+    this.setState({
+      items: [],
+      layouts: {},
+    });
+    Utils.saveItemsToLS("items", this.state.items);
+    Utils.saveLayoutsToLS("layouts", this.state.layouts);
+  };
+
+  onShowLayout(dialogVisible){
+    this.setState(()=>{
+      return {
+        showLayoutDialog:dialogVisible
+      };
+    });
+  };
+
+  onGetLayoutJson(){
+    const layoutJson={msgType:"SetMonitorLayout",data:{items:this.state.items,layouts:this.state.layouts}};
+    return JSON.stringify(layoutJson,null,2)
   }
 
   render() {
     return (
       <div>
-        <Heading node='h5'>AI Bot Dashboard V1.0 {" "}<Words style={{color:this.state.wsState.color}}>{" ["+this.state.wsState.text+"] "}</Words></Heading>
+        <Heading node='h5'>AI Bot Dashboard V1.0 {" "}<Words style={{ color: this.state.wsState.color }}>{" [" + this.state.wsState.text + "] "}</Words></Heading>
         <div style={{ margin: 5 }}>
+          <Button onClick={()=>this.onShowLayout(true)} animate layer='success'>
+            <i className='mdi mdi-content-save'></i>
+          </Button>
+          {' '}
           <Button onClick={this.onResetAll} animate layer='alert'>
             <i className='mdi mdi-lock-reset'></i>
           </Button>
@@ -255,18 +372,12 @@ class AddRemoveLayout extends React.PureComponent {
         >
           {_.map(this.state.items, (el) => this.createElement(el))}
         </ResponsiveReactGridLayout>
+        <ShowLayoutDialog modalVisible={this.state.showLayoutDialog} setModalVisible={this.onShowLayout} onGetLayoutJson={this.onGetLayoutJson}/>
       </div>
     );
   }
 
-  onResetAll() {
-    this.setState({
-      items: [],
-      layouts: {},
-    });
-    Utils.saveItemsToLS("items", this.state.items);
-    Utils.saveLayoutsToLS("layouts", this.state.layouts);
-  };
+  
 }
 
 

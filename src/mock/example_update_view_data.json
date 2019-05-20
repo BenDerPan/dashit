@@ -1,0 +1,34 @@
+{
+  "msgType":"UpdateViewData",
+  "data":[
+      {
+          "index":0,
+          "type":"table",
+          "title":"今日新闻",
+          "data":{
+              "columns":[
+                  {
+                      "title":"标题",
+                      "dataIndex":"title",
+                      "className":"Table-Row-Color"
+                  },
+                  {
+                      "title":"描述",
+                      "dataIndex":"content",
+                      "className":"Table-Row-Color"
+                  }
+              ],
+              "data":[
+                  {
+                      "title":"标题1",
+                      "content":"今天天气可好"
+                  },
+                  {
+                      "title":"标题2",
+                      "content":"Google deep learning"
+                  }
+              ]
+          }
+      }
+  ]
+}
