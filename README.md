@@ -1,7 +1,5 @@
 # DashIT，旨在构建一个通用的，科幻的展示平台，支持RESTFul+GraphQL等数据展示接口。
 
-## 当前处于测试开发阶段，由于刚接触前端，可能存在各种BUG或者设计模式上的错误实践，欢迎大牛传道解惑。
-
 ![./docs/img/overview.jpg](./docs/img/overview.jpg)
 
 
