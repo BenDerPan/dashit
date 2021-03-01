@@ -22,7 +22,7 @@
     "react-scripts": "3.0.0",
     "react-textarea-autosize": "^7.1.0",
     "redux-starter-kit": "^0.5.1",
-    "three": "^0.104.0",
+    "three": "^0.125.0",
     "three-orbitcontrols": "^2.102.1",
     "three-spritetext": "^1.0.6"
   },
